@@ -1,4 +1,4 @@
-#include "LamportAdapter.h"
+#include "./LamportAdapter.h"
 
 void LamportAdapter::send(int tag, int destination)
 {

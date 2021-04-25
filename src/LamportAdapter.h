@@ -6,11 +6,13 @@
 class LamportAdapter : public MessageMaker
 {
 public:
-  LamportAdapter();
+  LamportAdapter(int processId) : MessageMaker{processId};
+
+  int getClock() { return clock; };
 
   void send(int tag, int destination);
   void send(Message *m, int destination);
-  Message *create(int tag) { create(tag, clock); };
+  Message *create(int tag) { create(tag, clock++); };
   Message *receive();
 
 private:
