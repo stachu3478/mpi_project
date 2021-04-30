@@ -26,6 +26,7 @@ extern int size;
 /* to może przeniesiemy do global... */
 typedef struct {
     int ts;       /* timestamp (zegar lamporta */
+    int src; /* nadawca wiadomosci <skrutex> */
 } packet_t;
 extern MPI_Datatype MPI_PAKIET_T;
 
