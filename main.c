@@ -2,6 +2,7 @@
 #include "watek_komunikacyjny.h"
 #include "watek_glowny.h"
 /* wątki */
+#include <signal.h>
 #include <pthread.h>
 
 /* sem_init sem_destroy sem_post sem_wait */
@@ -9,17 +10,19 @@
 /* flagi dla open */
 //#include <fcntl.h>
 
-state_t stan=InRun;
+state_t stan=Mission;
 volatile char end = FALSE;
-int size,rank, tallow; /* nie trzeba zerować, bo zmienna globalna statyczna */
+int size,rank; /* nie trzeba zerować, bo zmienna globalna statyczna */
 MPI_Datatype MPI_PAKIET_T;
 pthread_t threadKom, threadMon;
 
 pthread_mutex_t stateMut = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t tallowMut = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t lamportMut = PTHREAD_MUTEX_INITIALIZER;
 
-int lamportClock = 0;
+void ctrl_c(int) {
+  int i;
+  for (i=0;i<size;i++)
+		sendPacket(0,i,FINISH);
+}
 
 void check_thread_support(int provided)
 {
@@ -49,23 +52,24 @@ void check_thread_support(int provided)
 */
 void inicjuj(int *argc, char ***argv)
 {
+    signal(SIGABRT, ctrl_c);
+    signal(SIGINT, ctrl_c);
+    
     int provided;
     MPI_Init_thread(argc, argv,MPI_THREAD_MULTIPLE, &provided);
     check_thread_support(provided);
-
+    
     /* Stworzenie typu */
     /* Poniższe (aż do MPI_Type_commit) potrzebne tylko, jeżeli
        brzydzimy się czymś w rodzaju MPI_Send(&typ, sizeof(pakiet_t), MPI_BYTE....
     */
     /* sklejone z stackoverflow */
-    const int nitems=3; /* bo packet_t ma trzy pola */
-    int       blocklengths[3] = {1,1,1};
-    MPI_Datatype typy[3] = {MPI_INT, MPI_INT, MPI_INT};
+    const int nitems=1; /* bo packet_t ma 1 pole */
+    int       blocklengths[3] = {1};
+    MPI_Datatype typy[3] = {MPI_INT};
 
     MPI_Aint     offsets[3]; 
     offsets[0] = offsetof(packet_t, ts);
-    offsets[1] = offsetof(packet_t, src);
-    offsets[2] = offsetof(packet_t, data);
 
     MPI_Type_create_struct(nitems, blocklengths, offsets, typy, &MPI_PAKIET_T);
     MPI_Type_commit(&MPI_PAKIET_T);
@@ -99,22 +103,8 @@ void sendPacket(packet_t *pkt, int destination, int tag)
     int freepkt=0;
     if (pkt==0) { pkt = malloc(sizeof(packet_t)); freepkt=1;}
     pkt->src = rank;
-    pthread_mutex_lock( &lamportMut );
-    pkt->ts = ++lamportClock;
-    pthread_mutex_unlock( &lamportMut );
     MPI_Send( pkt, 1, MPI_PAKIET_T, destination, tag, MPI_COMM_WORLD);
     if (freepkt) free(pkt);
-}
-
-void changeTallow( int newTallow )
-{
-    pthread_mutex_lock( &tallowMut );
-    if (stan==InFinish) { 
-	pthread_mutex_unlock( &tallowMut );
-        return;
-    }
-    tallow += newTallow;
-    pthread_mutex_unlock( &tallowMut );
 }
 
 void changeState( state_t newState )
@@ -132,7 +122,6 @@ int main(int argc, char **argv)
 {
     /* Tworzenie wątków, inicjalizacja itp */
     inicjuj(&argc,&argv); // tworzy wątek komunikacyjny w "watek_komunikacyjny.c"
-    tallow = 1000; // by było wiadomo ile jest łoju
     mainLoop();          // w pliku "watek_glowny.c"
 
     finalizuj();
