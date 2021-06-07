@@ -19,6 +19,8 @@ pthread_t threadKom, threadMon;
 pthread_mutex_t stateMut = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t lamportMut = PTHREAD_MUTEX_INITIALIZER;
 
+int lamportClock = 0;
+
 void ctrl_c(int _) {
   int i;
   for (i=0;i<size;i++)
