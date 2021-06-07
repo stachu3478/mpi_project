@@ -17,6 +17,7 @@ MPI_Datatype MPI_PAKIET_T;
 pthread_t threadKom, threadMon;
 
 pthread_mutex_t stateMut = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lamportMut = PTHREAD_MUTEX_INITIALIZER;
 
 void ctrl_c(int) {
   int i;
@@ -104,6 +105,9 @@ void sendPacket(packet_t *pkt, int destination, int tag)
     int freepkt=0;
     if (pkt==0) { pkt = malloc(sizeof(packet_t)); freepkt=1;}
     pkt->src = rank;
+    pthread_mutex_lock(&lamportMut);
+    pkt->ts = ++lamportClock;
+    pthread_mutex_unlock(&lamportMut);
     MPI_Send( pkt, 1, MPI_PAKIET_T, destination, tag, MPI_COMM_WORLD);
     if (freepkt) free(pkt);
 }

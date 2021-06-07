@@ -21,7 +21,11 @@
 typedef enum {Mission, Rest, EnteringBar, InBar, InRun, InMonitor, InSend, InFinish} state_t;
 extern state_t stan;
 extern int rank;
-extern int size;
+extern int size; 
+extern int lamportClock;
+
+/* mutex na ustawienie zegara lamporta */
+extern pthread_mutex_t lamportMut;
 
 /* to może przeniesiemy do global... */
 typedef struct {
@@ -54,7 +58,7 @@ extern MPI_Datatype MPI_PAKIET_T;
                                             
 */
 #ifdef DEBUG
-#define debug(FORMAT,...) printf("%c[%d;%dm [%d]: " FORMAT "%c[%d;%dm\n",  27, (1+(rank/7))%2, 31+(6+rank)%7, rank, ##__VA_ARGS__, 27,0,37);
+#define debug(FORMAT,...) printf("%c[%d;%dm [%d]: " FORMAT "%c[%d;%dm\n",  27, (1+(rank/7))%2, 31+(6+rank)%7, rank, lamportClock, ##__VA_ARGS__, 27,0,37);
 #else
 #define debug(...) ;
 #endif
