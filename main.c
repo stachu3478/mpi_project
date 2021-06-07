@@ -19,7 +19,7 @@ pthread_t threadKom, threadMon;
 pthread_mutex_t stateMut = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t lamportMut = PTHREAD_MUTEX_INITIALIZER;
 
-void ctrl_c(int) {
+void ctrl_c(int _) {
   int i;
   for (i=0;i<size;i++)
 		sendPacket(0,i,FINISH);
@@ -66,8 +66,8 @@ void inicjuj(int *argc, char ***argv)
     */
     /* sklejone z stackoverflow */
     const int nitems=2; /* bo packet_t ma 1 pole */
-    int       blocklengths[nitems] = {1,1};
-    MPI_Datatype typy[nitems] = {MPI_INT, MPI_INT};
+    int       blocklengths[2] = {1,1};
+    MPI_Datatype typy[2] = {MPI_INT, MPI_INT};
 
     MPI_Aint     offsets[nitems]; 
     offsets[0] = offsetof(packet_t, ts);
