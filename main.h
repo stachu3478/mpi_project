@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <semaphore.h>
 /* odkomentować, jeżeli się chce DEBUGI */
 //#define DEBUG 
 /* boolean */
@@ -19,10 +20,15 @@
 
 /* stany procesu */
 typedef enum {Mission, Rest, EnteringBar, InBar, InRun, InMonitor, InSend, InFinish} state_t;
-extern state_t stan;
+extern state_t state;
 extern int rank;
-extern int size; 
+extern int size;
+extern int barSize; 
 extern int lamportClock;
+extern sem_t ackSemaphore;
+extern int* waitingForAck;
+extern int waitingForAckCount;
+extern int barEntrancePriority;
 
 /* mutex na ustawienie zegara lamporta */
 extern pthread_mutex_t lamportMut;

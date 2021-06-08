@@ -10,7 +10,7 @@
 /* flagi dla open */
 //#include <fcntl.h>
 
-state_t stan=Mission;
+state_t state = Mission;
 volatile char end = FALSE;
 int size,rank; /* nie trzeba zerować, bo zmienna globalna statyczna */
 MPI_Datatype MPI_PAKIET_T;
@@ -20,6 +20,11 @@ pthread_mutex_t stateMut = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t lamportMut = PTHREAD_MUTEX_INITIALIZER;
 
 int lamportClock = 0;
+int barSize;
+sem_t ackSemaphore;
+int* waitingForAck;
+int waitingForAckCount;
+int barEntrancePriority;
 
 void ctrl_c(int _) {
   int i;
@@ -82,6 +87,9 @@ void inicjuj(int *argc, char ***argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     srand(rank);
 
+    waitingForAck = malloc(size * sizeof(int));
+    waitingForAckCount = 0;
+
     pthread_create( &threadKom, NULL, startKomWatek , 0);
     debug("jestem");
 }
@@ -98,35 +106,70 @@ void finalizuj()
     if (rank==0) pthread_join(threadMon,NULL);
     MPI_Type_free(&MPI_PAKIET_T);
     MPI_Finalize();
+
+    free(waitingForAck);
 }
 
 
 /* opis patrz main.h */
-void sendPacket(packet_t *pkt, int destination, int tag)
+void sendPacket(packet_t *pkt, int destination, int tag, char incrementLamport = FALSE)
 {
     int freepkt=0;
     if (pkt==0) { pkt = malloc(sizeof(packet_t)); freepkt=1;}
     pkt->src = rank;
-    pthread_mutex_lock(&lamportMut);
-    pkt->ts = ++lamportClock;
-    pthread_mutex_unlock(&lamportMut);
+    if (incrementLamport) {
+        pthread_mutex_lock(&lamportMut);
+        pkt->ts = ++lamportClock;
+        pthread_mutex_unlock(&lamportMut);
+    } else {
+        pkt->ts = lamportClock;
+    }
     MPI_Send( pkt, 1, MPI_PAKIET_T, destination, tag, MPI_COMM_WORLD);
     if (freepkt) free(pkt);
 }
 
 void changeState( state_t newState )
 {
-    pthread_mutex_lock( &stateMut );
-    if (stan==InFinish) { 
-	pthread_mutex_unlock( &stateMut );
+    if (state==InFinish) { 
+	    pthread_mutex_unlock( &stateMut );
         return;
     }
-    stan = newState;
+    state = newState;
     pthread_mutex_unlock( &stateMut );
+}
+
+void parseConfig() {
+    char * buffer = 0;
+    long length;
+    FILE * f = fopen (filename, "barSize.txt");
+
+    if (f) {
+        fseek (f, 0, SEEK_END);
+        length = ftell (f);
+        fseek (f, 0, SEEK_SET);
+        buffer = malloc (length);
+        if (buffer) {
+            fread (buffer, 1, length, f);
+        }
+        fclose (f);
+    }
+
+    if (buffer) {
+        barSize = atoi(buffer);
+        printf("Rozmiar baru: %d", barSize);
+    } else {
+        printf("Brak plik configuracyjnego barSize.txt!");
+    }
+}
+
+int priorityFunc(packet_t packet)
+{
+    return -(packet.ts * size + packet.ts);
 }
 
 int main(int argc, char **argv)
 {
+
     /* Tworzenie wątków, inicjalizacja itp */
     inicjuj(&argc,&argv); // tworzy wątek komunikacyjny w "watek_komunikacyjny.c"
     mainLoop();          // w pliku "watek_glowny.c"

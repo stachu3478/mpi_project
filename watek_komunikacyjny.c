@@ -5,25 +5,42 @@
 void *startKomWatek(void *ptr)
 {
     MPI_Status status;
-    packet_t pakiet;
+    packet_t packet;
     /* Obrazuje pętlę odbierającą pakiety o różnych typach */
-    while ( stan!=InFinish ) {
-	debug("czekam na recv");
-        MPI_Recv( &pakiet, 1, MPI_PAKIET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    while ( state!=InFinish ) {
+	    debug("czekam na recv");
+        MPI_Recv( &packet, 1, MPI_PAKIET_T, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         pthread_mutex_lock(&lamportMut);
-        lamportClock = MAX(pakiet.ts, lamportClock) + 1;
+        lamportClock = MAX(packet.ts, lamportClock) + 1;
         pthread_mutex_unlock(&lamportMut);
 
+        priority = priorityFunc(packet)
+
+        pthread_mutex_lock(&stateMut);
         switch ( status.MPI_TAG ) {
-	    case FINISH: 
-                changeState(InFinish);
+	    case FINISH:
+            changeState(InFinish);
 	    break;
-	    case REQ: 
-                /* code here */
+	    case REQ:
+            if (state === EnteringBar) {
+                if (priority < barEntrancePriority) {
+                    sem_post(ackSemaphore);
+                    waitingForAck[waitingForAckCount++] = packet.src;
+                }
+            } else if (state === InBar) {
+                waitingForAck[waitingForAckCount++] = packet.src;
+            } else {
+                sendPacket(0, packet.src, ACK);
+            }
 	    break;
-	    case ACK: 
-                /* code here */
+	    case ACK:
+            if (state === EnteringBar) {
+                if (priority < barEntrancePriority) {
+                    sem_post(ackSemaphore);
+                }
+            }
 	    break;
         }
+        pthread_mutex_unlock(&stateMut);
     }
 }
