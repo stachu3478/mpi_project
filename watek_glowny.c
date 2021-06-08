@@ -13,7 +13,7 @@ void mainLoop()
             println("Czekam na bar");
         } else if (state == EnteringBar) {
             pthread_mutex_lock(&lamportMut);
-            sem_init(&ackSemaphore, FALSE, -1);
+            sem_init(&ackSemaphore, FALSE, 0);
             packet_t packet;
             packet.ts = ++lamportClock;
             for (i = 0; i < size; i++) {
@@ -27,7 +27,6 @@ void mainLoop()
             pthread_mutex_unlock(&lamportMut);
 	    for (i = 0; i < size - barSize; i++)
 		    sem_wait(&ackSemaphore);
-            sem_wait(&ackSemaphore);
             pthread_mutex_lock(&stateMut);
             sem_destroy(&ackSemaphore);
             changeState(InBar);

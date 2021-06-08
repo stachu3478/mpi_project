@@ -22,6 +22,7 @@ pthread_mutex_t lamportMut = PTHREAD_MUTEX_INITIALIZER;
 int lamportClock = 0;
 int barSize;
 sem_t ackSemaphore;
+char* ackVector;
 int* waitingForAck;
 int waitingForAckCount;
 int barEntrancePriority;

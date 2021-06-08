@@ -31,7 +31,7 @@ void *startKomWatek(void *ptr)
 	    case REQ:
             if (state == EnteringBar) {
                 if (priority < barEntrancePriority) {
-                    addAck(packet.src)
+                    addAck(packet.src);
                     waitingForAck[waitingForAckCount++] = packet.src;
                     debug("Dostalem implicit ACK, odesle jak wyjde");
                 } else if (priority > barEntrancePriority) {
@@ -51,7 +51,7 @@ void *startKomWatek(void *ptr)
 	    case ACK:
             if (state == EnteringBar) {
                 if (priority < barEntrancePriority) {
-                    addAck(packet.src)
+                    addAck(packet.src);
                 }
             }
 	    break;
