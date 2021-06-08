@@ -1,6 +1,13 @@
 #include "main.h"
 #include "watek_komunikacyjny.h"
 
+void addAck(int id) {
+    if (!ackVector[id]) {
+        ackVector[id] = TRUE;
+        sem_post(&ackSemaphore);
+    }
+}
+
 /* wątek komunikacyjny; zajmuje się odbiorem i reakcją na komunikaty */
 void *startKomWatek(void *ptr)
 {
@@ -24,15 +31,15 @@ void *startKomWatek(void *ptr)
 	    case REQ:
             if (state == EnteringBar) {
                 if (priority < barEntrancePriority) {
-                    sem_post(&ackSemaphore);
+                    addAck(packet.src)
                     waitingForAck[waitingForAckCount++] = packet.src;
                     debug("Dostalem implicit ACK, odesle jak wyjde");
                 } else if (priority > barEntrancePriority) {
-		    debug("Za maly priorytet");
-		} else {
-		    println("Nie ma 2 wiadomosci z takim samym priorytetem! Wychodze");
-		    exit(priority);
-		}
+                    debug("Za maly priorytet");
+                } else {
+                    println("Nie ma 2 wiadomosci z takim samym priorytetem! Wychodze");
+                    exit(priority);
+                }
             } else if (state == InBar) {
                 waitingForAck[waitingForAckCount++] = packet.src;
                 debug("Wysle ACK jak wyjde");
@@ -44,7 +51,7 @@ void *startKomWatek(void *ptr)
 	    case ACK:
             if (state == EnteringBar) {
                 if (priority < barEntrancePriority) {
-                    sem_post(&ackSemaphore);
+                    addAck(packet.src)
                 }
             }
 	    break;

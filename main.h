@@ -26,6 +26,7 @@ extern int size;
 extern int barSize; 
 extern int lamportClock;
 extern sem_t ackSemaphore;
+extern char* ackVector;
 extern int* waitingForAck;
 extern int waitingForAckCount;
 extern int barEntrancePriority;

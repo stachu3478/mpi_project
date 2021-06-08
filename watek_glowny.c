@@ -20,17 +20,18 @@ void mainLoop()
                 if (i != rank) {
                     sendPacket(&packet, i, REQ);
                 }
+                ackVector[i] = FALSE;
             }            
             barEntrancePriority = priorityFunc(packet);
-	    debug("Czekam na %d x ACK moj priorytet %d", barSize - size + 2, barEntrancePriority);
+	        debug("Czekam na %d x ACK moj priorytet %d", barSize - size + 2, barEntrancePriority);
             pthread_mutex_unlock(&lamportMut);
 	    for (i = 0; i < size - barSize; i++)
-		sem_wait(&ackSemaphore);
+		    sem_wait(&ackSemaphore);
             sem_wait(&ackSemaphore);
             pthread_mutex_lock(&stateMut);
             sem_destroy(&ackSemaphore);
             changeState(InBar);
-	    println("Wchodze do baru");
+	        println("Wchodze do baru");
         } else if (state == InBar) {
             sleep(rand() % 5);
             pthread_mutex_lock(&stateMut);

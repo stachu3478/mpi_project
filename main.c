@@ -88,6 +88,7 @@ void inicjuj(int *argc, char ***argv)
     srand(rank);
 
     waitingForAck = malloc(size * sizeof(int));
+    ackVector = malloc(size * sizeof(char));
     waitingForAckCount = 0;
 
     pthread_create( &threadKom, NULL, startKomWatek , 0);
@@ -108,6 +109,7 @@ void finalizuj()
     MPI_Finalize();
 
     free(waitingForAck);
+    free(ackVector);
 }
 
 
