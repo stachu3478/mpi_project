@@ -112,12 +112,12 @@ void finalizuj()
 
 
 /* opis patrz main.h */
-void sendPacket(packet_t *pkt, int destination, int tag, char incrementLamport = FALSE)
+void sendPacket(packet_t *pkt, int destination, int tag)
 {
     int freepkt=0;
     if (pkt==0) { pkt = malloc(sizeof(packet_t)); freepkt=1;}
     pkt->src = rank;
-    if (incrementLamport) {
+    if (freepkt) {
         pthread_mutex_lock(&lamportMut);
         pkt->ts = ++lamportClock;
         pthread_mutex_unlock(&lamportMut);
@@ -141,7 +141,7 @@ void changeState( state_t newState )
 void parseConfig() {
     char * buffer = 0;
     long length;
-    FILE * f = fopen (filename, "barSize.txt");
+    FILE * f = fopen ("barSize.txt", "rb");
 
     if (f) {
         fseek (f, 0, SEEK_END);
@@ -156,20 +156,20 @@ void parseConfig() {
 
     if (buffer) {
         barSize = atoi(buffer);
-        printf("Rozmiar baru: %d", barSize);
+        printf("Rozmiar baru: %d\n", barSize);
     } else {
-        printf("Brak plik configuracyjnego barSize.txt!");
+        printf("Brak plik configuracyjnego barSize.txt!\n");
     }
 }
 
 int priorityFunc(packet_t packet)
 {
-    return -(packet.ts * size + packet.ts);
+    return packet.src - packet.ts * size;
 }
 
 int main(int argc, char **argv)
 {
-
+    parseConfig();
     /* Tworzenie wątków, inicjalizacja itp */
     inicjuj(&argc,&argv); // tworzy wątek komunikacyjny w "watek_komunikacyjny.c"
     mainLoop();          // w pliku "watek_glowny.c"

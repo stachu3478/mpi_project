@@ -14,7 +14,7 @@ void *startKomWatek(void *ptr)
         lamportClock = MAX(packet.ts, lamportClock) + 1;
         pthread_mutex_unlock(&lamportMut);
 
-        priority = priorityFunc(packet)
+        int priority = priorityFunc(packet);
 
         pthread_mutex_lock(&stateMut);
         switch ( status.MPI_TAG ) {
@@ -22,21 +22,29 @@ void *startKomWatek(void *ptr)
             changeState(InFinish);
 	    break;
 	    case REQ:
-            if (state === EnteringBar) {
+            if (state == EnteringBar) {
                 if (priority < barEntrancePriority) {
-                    sem_post(ackSemaphore);
+                    sem_post(&ackSemaphore);
                     waitingForAck[waitingForAckCount++] = packet.src;
-                }
-            } else if (state === InBar) {
+                    debug("Dostalem implicit ACK, odesle jak wyjde");
+                } else if (priority > barEntrancePriority) {
+		    debug("Za maly priorytet");
+		} else {
+		    println("Nie ma 2 wiadomosci z takim samym priorytetem! Wychodze");
+		    exit(priority);
+		}
+            } else if (state == InBar) {
                 waitingForAck[waitingForAckCount++] = packet.src;
+                debug("Wysle ACK jak wyjde");
             } else {
                 sendPacket(0, packet.src, ACK);
+                debug("Wysylam ACK");
             }
 	    break;
 	    case ACK:
-            if (state === EnteringBar) {
+            if (state == EnteringBar) {
                 if (priority < barEntrancePriority) {
-                    sem_post(ackSemaphore);
+                    sem_post(&ackSemaphore);
                 }
             }
 	    break;

@@ -32,6 +32,7 @@ extern int barEntrancePriority;
 
 /* mutex na ustawienie zegara lamporta */
 extern pthread_mutex_t lamportMut;
+extern pthread_mutex_t stateMut;
 
 /* to może przeniesiemy do global... */
 typedef struct {
@@ -80,9 +81,10 @@ extern MPI_Datatype MPI_PAKIET_T;
 #define P_CLR printf("%c[%d;%dm",27,0,37);
 
 /* printf ale z kolorkami i automatycznym wyświetlaniem RANK. Patrz debug wyżej po szczegóły, jak działa ustawianie kolorków */
-#define println(FORMAT, ...) printf("%c[%d;%dm [%d]: " FORMAT "%c[%d;%dm\n",  27, (1+(rank/7))%2, 31+(6+rank)%7, rank, ##__VA_ARGS__, 27,0,37);
+#define println(FORMAT, ...) printf("%c[%d;%dm [%d][:%d]: " FORMAT "%c[%d;%dm\n",  27, (1+(rank/7))%2, 31+(6+rank)%7, rank, lamportClock, ##__VA_ARGS__, 27,0,37);
 
 /* wysyłanie pakietu, skrót: wskaźnik do pakietu (0 oznacza stwórz pusty pakiet), do kogo, z jakim typem */
 void sendPacket(packet_t *pkt, int destination, int tag);
 void changeState( state_t );
+int priorityFunc( packet_t );
 #endif

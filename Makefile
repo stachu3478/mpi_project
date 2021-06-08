@@ -1,6 +1,6 @@
 SOURCES=$(wildcard *.c)
 HEADERS=$(SOURCES:.c=.h)
-FLAGS=-DDEBUG -g
+FLAGS=-DNIEDEBUG -g
 
 all: main
 

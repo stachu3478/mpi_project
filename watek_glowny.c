@@ -1,36 +1,43 @@
 #include "main.h"
 #include "watek_glowny.h"
 
+int i;
 void mainLoop()
 {
     srandom(rank);
     while (state != InFinish) {
         /* code here */
-        if (state === Mission) {
+        if (state == Mission) {
             sleep(rand() % 5);
             changeState(EnteringBar);
-        } else if (state === EnteringBar) {
+            println("Czekam na bar");
+        } else if (state == EnteringBar) {
             pthread_mutex_lock(&lamportMut);
-            sem_init(ackSemaphore, FALSE, barSize - size + 1);
-            pkt->ts = ++lamportClock;
+            sem_init(&ackSemaphore, FALSE, -1);
             packet_t packet;
-            for (int i = 0; i < size; i++) {
+            packet.ts = ++lamportClock;
+            for (i = 0; i < size; i++) {
                 if (i != rank) {
-                    sendPacket(packet, i, REQ);
+                    sendPacket(&packet, i, REQ);
                 }
-            }
+            }            
             barEntrancePriority = priorityFunc(packet);
+	    debug("Czekam na %d x ACK moj priorytet %d", barSize - size + 2, barEntrancePriority);
             pthread_mutex_unlock(&lamportMut);
-            sem_wait(ackSemaphore);
+	    for (i = 0; i < size - barSize; i++)
+		sem_wait(&ackSemaphore);
+            sem_wait(&ackSemaphore);
             pthread_mutex_lock(&stateMut);
-            sem_destroy(ackSemaphore);
+            sem_destroy(&ackSemaphore);
             changeState(InBar);
-        } else if (state === InBar) {
+	    println("Wchodze do baru");
+        } else if (state == InBar) {
             sleep(rand() % 5);
             pthread_mutex_lock(&stateMut);
             changeState(Rest);
-        } else if (state === Rest) {
-            for (int i = 0; i < waitingForAckCount; i++) {
+            println("Wychodze z baru");
+        } else if (state == Rest) {
+            for (i = 0; i < waitingForAckCount; i++) {
                 sendPacket(0, waitingForAck[i], ACK);
             }
             waitingForAckCount = 0;
