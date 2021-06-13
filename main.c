@@ -136,6 +136,8 @@ void changeState( state_t newState )
     if (state==InFinish) { 
 	    pthread_mutex_unlock( &stateMut );
         return;
+    } else if (state==InBar){
+	    pthread_mutex_lock( &stateMut);
     }
     state = newState;
     pthread_mutex_unlock( &stateMut );

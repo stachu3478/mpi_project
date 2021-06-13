@@ -27,7 +27,6 @@ void getEntryPermission()
 void waitAndChangeState( state_t state, int t)
 {
 	sleep(rand() % t);
-	if(state==InBar) pthread_mutex_lock(&stateMut);
 	changeState(state);
 }
 
